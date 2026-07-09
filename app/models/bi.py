@@ -6,8 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import CustomBaseModel
 
 
-class BIDataSource(CustomBaseModel):
-    __table_name__ = "bi_data_source"
+class AIDataSource(CustomBaseModel):
+    __table_name__ = "ai_data_source"
 
     name: Mapped[str] = mapped_column(String(128), nullable=False, comment="数据源名称")
     code: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True, comment="数据源编码")
@@ -24,55 +24,47 @@ class BIDataSource(CustomBaseModel):
     owner_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, comment="负责人ID")
 
 
-class BIDataset(CustomBaseModel):
-    __table_name__ = "bi_dataset"
+class AISemanticModel(CustomBaseModel):
+    __table_name__ = "ai_semantic_model"
 
     data_source_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("bi_data_source.id"),
+        ForeignKey("ai_data_source.id"),
         nullable=False,
         index=True,
         comment="数据源ID",
     )
-    name: Mapped[str] = mapped_column(String(128), nullable=False, comment="数据集名称")
-    code: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True, comment="数据集编码")
-    sql_text: Mapped[str] = mapped_column(Text, nullable=False, comment="数据集SQL")
-    dimensions: Mapped[list] = mapped_column(JSON, nullable=False, default=list, comment="维度配置")
+    name: Mapped[str] = mapped_column(String(128), nullable=False, comment="语义模型名称")
+    code: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True, comment="语义模型编码")
+    table_name: Mapped[str] = mapped_column(String(128), nullable=False, comment="主表名")
+    table_description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="表说明")
+    fields: Mapped[list] = mapped_column(JSON, nullable=False, default=list, comment="字段配置")
     metrics: Mapped[list] = mapped_column(JSON, nullable=False, default=list, comment="指标配置")
-    filters: Mapped[list] = mapped_column(JSON, nullable=False, default=list, comment="筛选器配置")
-    cache_ttl_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="缓存秒数")
+    dimensions: Mapped[list] = mapped_column(JSON, nullable=False, default=list, comment="维度配置")
+    terms: Mapped[list] = mapped_column(JSON, nullable=False, default=list, comment="业务术语")
+    example_questions: Mapped[list] = mapped_column(JSON, nullable=False, default=list, comment="示例问题")
+    prompt_hints: Mapped[str | None] = mapped_column(Text, nullable=True, comment="提示词补充说明")
     description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="说明")
     owner: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="负责人")
     owner_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, comment="负责人ID")
 
 
-class BIChart(CustomBaseModel):
-    __table_name__ = "bi_chart"
+class AIQuestionSession(CustomBaseModel):
+    __table_name__ = "ai_question_session"
 
-    dataset_id: Mapped[int] = mapped_column(
+    question: Mapped[str] = mapped_column(Text, nullable=False, comment="用户问题")
+    semantic_model_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("bi_dataset.id"),
-        nullable=False,
+        ForeignKey("ai_semantic_model.id"),
+        nullable=True,
         index=True,
-        comment="数据集ID",
+        comment="语义模型ID",
     )
-    name: Mapped[str] = mapped_column(String(128), nullable=False, comment="图表名称")
-    code: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True, comment="图表编码")
-    chart_type: Mapped[str] = mapped_column(String(32), nullable=False, comment="图表类型")
-    query_config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, comment="查询配置")
-    display_config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, comment="展示配置")
-    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="说明")
-    owner: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="负责人")
-    owner_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, comment="负责人ID")
-
-
-class BIDashboard(CustomBaseModel):
-    __table_name__ = "bi_dashboard"
-
-    name: Mapped[str] = mapped_column(String(128), nullable=False, comment="仪表盘名称")
-    code: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True, comment="仪表盘编码")
-    layout_config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, comment="布局配置")
-    chart_config: Mapped[list] = mapped_column(JSON, nullable=False, default=list, comment="图表编排配置")
-    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="说明")
-    owner: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="负责人")
-    owner_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, comment="负责人ID")
+    generated_sql: Mapped[str | None] = mapped_column(Text, nullable=True, comment="生成SQL")
+    sql_risk: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="SQL风险等级")
+    plan: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, comment="问数计划")
+    result_summary: Mapped[str | None] = mapped_column(Text, nullable=True, comment="结果摘要")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="错误信息")
+    state: Mapped[str] = mapped_column(String(32), nullable=False, default="planned", comment="状态")
+    requester: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="提问人")
+    requester_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, comment="提问人ID")
